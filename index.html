@@ -1,0 +1,865 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Routine Check-in (ডেইলি রুটিন)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', 'Nirmala UI', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      transition: background-color 0.2s ease;
+    }
+
+    body.flash-danger {
+      background-color: #7f1d1d;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      padding: 28px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      text-align: center;
+      border: 1px solid #334155;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      background: #334155;
+      color: #cbd5e1;
+    }
+
+    .status-badge.armed {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    .clock {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin: 5px 0;
+      letter-spacing: 1px;
+      color: #38bdf8;
+    }
+
+    .sub-clock {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+
+    /* Question Prompt Box */
+    .prompt-box {
+      background: #0f172a;
+      border: 2px solid #475569;
+      border-radius: 14px;
+      padding: 24px 16px;
+      margin: 20px 0;
+      transition: all 0.3s ease;
+    }
+
+    .prompt-box.active-alarm {
+      border-color: var(--danger);
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+      animation: shake 0.5s infinite;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    .bengali-question {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.4;
+      color: #ffffff;
+      margin: 0 0 8px 0;
+    }
+
+    .english-sub {
+      font-size: 0.95rem;
+      color: #94a3b8;
+      margin-bottom: 20px;
+    }
+
+    .stress-meter {
+      display: none;
+      margin: 12px 0;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    /* Primary Yes Button */
+    .btn-yes {
+      width: 100%;
+      padding: 18px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      background: var(--accent);
+      color: #052e16;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    .btn-yes:hover {
+      background: #4ade80;
+    }
+
+    .btn-yes:active {
+      transform: scale(0.98);
+    }
+
+    .btn-yes:disabled {
+      background: #334155;
+      color: #94a3b8;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* Controls for Laptop Testing */
+    .test-panel {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px dashed #475569;
+      text-align: left;
+    }
+
+    .test-panel h4 {
+      margin: 0 0 10px 0;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    .test-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      background: #334155;
+    }
+
+    .btn-trigger {
+      border-color: var(--warning);
+      color: #fcd34d;
+    }
+
+    /* Log History */
+    .history-panel {
+      margin-top: 24px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .history-panel h4 {
+      margin: 0 0 10px 0;
+      font-size: 0.95rem;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .log-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 180px;
+      overflow-y: auto;
+      background: #0f172a;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+
+    .log-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid #1e293b;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .log-status {
+      color: #4ade80;
+      font-weight: 600;
+    }
+
+    /* NEW: Download audit logs */
+    .btn-download-logs {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #38bdf8;
+      background: #0c4a6e;
+      color: #e0f2fe;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .btn-download-logs:hover {
+      background: #075985;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div id="audioStatus" class="status-badge">
+      🔇 Audio Locked (Click "Arm Audio" below to enable)
+    </div>
+
+    <div id="clockDisplay" class="clock">--:--:--</div>
+
+    <div class="sub-clock">
+      Target Daily Alarm: <strong>9:30:00 PM IST</strong>
+    </div>
+
+    <div id="promptBox" class="prompt-box">
+      <p class="bengali-question">
+        আপনি কি আজকের ওষুধ খেয়েছেন?
+      </p>
+
+      <p class="english-sub">
+        (Did you take your medication today?)
+      </p>
+
+      <div id="stressMeter" class="stress-meter">
+        ⚠️ চূড়ান্ত সতর্কবার্তা! দয়া করে ওষুধ খেয়ে নিচের বোতামটি চাপুন! (Level 1)
+      </div>
+
+      <button id="btnYes" class="btn-yes" onclick="confirmMedication()">
+        ✅ হ্যাঁ, খেয়েছি (Yes, Taken)
+      </button>
+    </div>
+
+    <!-- Existing Laptop Testing Controls -->
+    <div class="test-panel">
+      <h4>🛠️ Laptop Testing Controls:</h4>
+
+      <div class="test-buttons">
+        <button class="btn-secondary" onclick="armAudioSystem()">
+          1. Arm Audio System
+        </button>
+
+        <button class="btn-secondary btn-trigger" onclick="startAlarmLoop()">
+          2. Simulate 9:30 PM Trigger Now
+        </button>
+
+        <button class="btn-secondary" onclick="resetTodayStatus()">
+          3. Reset Today's Entry
+        </button>
+      </div>
+    </div>
+
+    <!-- Existing Daily Data Log -->
+    <div class="history-panel">
+      <h4>
+        <span>📋 Daily Adherence Log (একনজরে তথ্য)</span>
+        <span id="todayBadge"></span>
+      </h4>
+
+      <ul id="logList" class="log-list"></ul>
+
+      <!-- NEW: Only an export button; no No button is added -->
+      <button class="btn-download-logs" onclick="downloadMedicationLogs()">
+        ⬇️ Download Logs (.txt)
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let audioCtx = null;
+    let alarmActive = false;
+    let alarmStartTime = null;
+    let soundInterval = null;
+    let escalationTimer = null;
+    let currentStage = 1;
+
+    // NEW: In-memory backup if browser storage fails during this session.
+    let auditLogsInMemory = [];
+
+    // 1. Unlock Web Audio API on Browser
+    function armAudioSystem() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      // Play a tiny confirmation blip
+      playTone(600, 'sine', 0.1, 0.1);
+
+      const badge = document.getElementById('audioStatus');
+      badge.textContent = '🔊 Audio System Armed & Monitoring 9:30 PM IST';
+      badge.classList.add('armed');
+    }
+
+    // 2. Real-time IST Clock & 9:30 PM Checker
+    function updateClock() {
+      const now = new Date();
+
+      const istOptions = {
+        timeZone: 'Asia/Kolkata',
+        hour12: true,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      };
+
+      const istTime24 = new Date(
+        now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+      );
+
+      document.getElementById('clockDisplay').textContent =
+        now.toLocaleTimeString('en-IN', istOptions) + ' IST';
+
+      const hours = istTime24.getHours();
+      const minutes = istTime24.getMinutes();
+      const seconds = istTime24.getSeconds();
+
+      // Check if it is 9:30 PM IST and today's dose is not logged yet.
+      if (hours === 21 && minutes === 30 && seconds === 0) {
+        if (!hasLoggedToday() && !alarmActive) {
+          startAlarmLoop();
+        }
+      }
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 3. Web Audio Synthesizer for Stressful Noises
+    function playTone(freq, type, duration, gainVal = 0.5) {
+      if (!audioCtx) armAudioSystem();
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playSirenSweep(startFreq, endFreq, duration) {
+      if (!audioCtx) armAudioSystem();
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(
+        endFreq,
+        audioCtx.currentTime + duration
+      );
+
+      gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playDissonantScreech(duration) {
+      if (!audioCtx) armAudioSystem();
+
+      const freqs = [2200, 2345];
+
+      freqs.forEach(f => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.9, audioCtx.currentTime);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      });
+    }
+
+    // 4. Start & Escalate Alarm
+    function startAlarmLoop() {
+      if (alarmActive) return;
+
+      armAudioSystem();
+
+      alarmActive = true;
+      alarmStartTime = Date.now();
+      currentStage = 1;
+
+      document.getElementById('promptBox').classList.add('active-alarm');
+
+      const meter = document.getElementById('stressMeter');
+      meter.style.display = 'block';
+
+      speakBengaliPrompt();
+      runStagePattern();
+
+      escalationTimer = setInterval(checkEscalationStage, 1000);
+    }
+
+    function speakBengaliPrompt() {
+      if ('speechSynthesis' in window) {
+        const msg = new SpeechSynthesisUtterance(
+          "আপনি কি আজকের ওষুধ খেয়েছেন? দয়া করে হ্যাঁ বোতামটি চাপুন।"
+        );
+
+        msg.lang = 'bn-IN';
+        msg.rate = 0.95;
+
+        window.speechSynthesis.speak(msg);
+      }
+    }
+
+    function checkEscalationStage() {
+      if (!alarmActive) return;
+
+      const elapsedSeconds = Math.floor(
+        (Date.now() - alarmStartTime) / 1000
+      );
+
+      let newStage = 1;
+
+      if (elapsedSeconds >= 45) {
+        newStage = 4;
+      } else if (elapsedSeconds >= 30) {
+        newStage = 3;
+      } else if (elapsedSeconds >= 15) {
+        newStage = 2;
+      }
+
+      if (newStage !== currentStage) {
+        currentStage = newStage;
+        runStagePattern();
+      }
+
+      const stageDescriptions = {
+        1: "🔔 ধাপ ১: ওষুধের সময় হয়েছে! (Stage 1: Mild Beep)",
+        2: "⚠️ ধাপ ২: দয়া করে দেরি করবেন না! (Stage 2: Rapid Harsh Pulse)",
+        3: "🚨 ধাপ ৩: জরুরি সাইরেন! এখনই ওষুধ খান! (Stage 3: Emergency Siren)",
+        4: "🔥 ধাপ ৪: চরম সতর্কবার্তা! হ্যাঁ না চাপা পর্যন্ত শব্দ বন্ধ হবে না! (Stage 4: MAX STRESS SCREECH)"
+      };
+
+      document.getElementById('stressMeter').textContent =
+        `${stageDescriptions[currentStage]} [${elapsedSeconds}s]`;
+    }
+
+    function runStagePattern() {
+      clearInterval(soundInterval);
+      document.body.classList.remove('flash-danger');
+
+      if (currentStage === 1) {
+        playTone(800, 'square', 0.25, 0.3);
+
+        soundInterval = setInterval(
+          () => playTone(800, 'square', 0.25, 0.3),
+          1800
+        );
+
+      } else if (currentStage === 2) {
+        speakBengaliPrompt();
+
+        soundInterval = setInterval(() => {
+          playTone(1200, 'sawtooth', 0.3, 0.6);
+        }, 700);
+
+      } else if (currentStage === 3) {
+        soundInterval = setInterval(() => {
+          playSirenSweep(900, 1800, 0.45);
+        }, 500);
+
+      } else if (currentStage === 4) {
+        speakBengaliPrompt();
+
+        soundInterval = setInterval(() => {
+          playDissonantScreech(0.35);
+          document.body.classList.toggle('flash-danger');
+        }, 400);
+      }
+    }
+
+    // 5. User clicks YES: stop alarm, save daily entry and audit the outcome.
+    function confirmMedication() {
+      // Stop all alarms immediately.
+      alarmActive = false;
+
+      clearInterval(soundInterval);
+      clearInterval(escalationTimer);
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      document.body.classList.remove('flash-danger');
+
+      document.getElementById('promptBox').classList.remove('active-alarm');
+      document.getElementById('stressMeter').style.display = 'none';
+
+      // NEW: Generate a timestamp for this confirmation attempt.
+      const now = new Date();
+      const todayKey = getTodayDateString();
+
+      const timestampIST = now.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }) + ' IST';
+
+      const nowIST = now.toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+
+      let capturedSuccessfully = false;
+      let captureDetails = '';
+
+      // Attempt to save the original daily confirmation.
+      try {
+        const logs = JSON.parse(
+          localStorage.getItem('medLogs') || '{}'
+        );
+
+        logs[todayKey] = {
+          answer: "হ্যাঁ (Yes)",
+          time: nowIST,
+          stageStoppedAt: currentStage
+        };
+
+        localStorage.setItem('medLogs', JSON.stringify(logs));
+
+        // Verify that the saved confirmation can be read back.
+        const savedLogs = JSON.parse(
+          localStorage.getItem('medLogs') || '{}'
+        );
+
+        capturedSuccessfully = Boolean(
+          savedLogs[todayKey] &&
+          savedLogs[todayKey].answer === "হ্যাঁ (Yes)" &&
+          savedLogs[todayKey].time === nowIST
+        );
+
+        captureDetails = capturedSuccessfully
+          ? 'Confirmation saved and verified in browser storage.'
+          : 'Confirmation could not be verified after saving.';
+
+      } catch (error) {
+        capturedSuccessfully = false;
+
+        captureDetails =
+          'Storage error: ' +
+          (error && error.message ? error.message : String(error));
+      }
+
+      // NEW: Record every confirmation attempt, including failed saves.
+      recordMedicationAudit({
+        timestamp: timestampIST,
+        date: todayKey,
+        answer: 'YES',
+        captured: capturedSuccessfully,
+        details: captureDetails
+      });
+
+      renderLogs();
+    }
+
+    // NEW: Append each audit entry without replacing previous entries.
+    function recordMedicationAudit(entry) {
+      // Session backup allows export even if persistent storage fails.
+      auditLogsInMemory.push(entry);
+
+      try {
+        const stored = JSON.parse(
+          localStorage.getItem('medAuditLogs') || '[]'
+        );
+
+        stored.push(entry);
+
+        localStorage.setItem(
+          'medAuditLogs',
+          JSON.stringify(stored)
+        );
+
+      } catch (error) {
+        // The in-memory copy remains available for download in this session.
+        console.error(
+          'Could not persist medication audit log:',
+          error
+        );
+      }
+    }
+
+    // NEW: Download all available audit entries as a plain-text file.
+    function downloadMedicationLogs() {
+      let storedAuditLogs = [];
+
+      try {
+        storedAuditLogs = JSON.parse(
+          localStorage.getItem('medAuditLogs') || '[]'
+        );
+
+        if (!Array.isArray(storedAuditLogs)) {
+          storedAuditLogs = [];
+        }
+
+      } catch (error) {
+        console.error(
+          'Could not read saved medication audit logs:',
+          error
+        );
+      }
+
+      // Merge saved and session-only entries without duplicating them.
+      const combined = storedAuditLogs.slice();
+
+      auditLogsInMemory.forEach(memoryEntry => {
+        const alreadyStored = combined.some(entry =>
+          entry.timestamp === memoryEntry.timestamp &&
+          entry.date === memoryEntry.date &&
+          entry.answer === memoryEntry.answer &&
+          entry.captured === memoryEntry.captured
+        );
+
+        if (!alreadyStored) {
+          combined.push(memoryEntry);
+        }
+      });
+
+      // Keep entries in chronological order.
+      combined.sort((a, b) => {
+        const timestampA = a.timestamp || '';
+        const timestampB = b.timestamp || '';
+
+        return timestampA.localeCompare(timestampB);
+      });
+
+      const lines = [
+        'DAILY MEDICATION CONFIRMATION AUDIT LOG',
+        'Generated: ' +
+          new Date().toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata'
+          }) + ' IST',
+        '============================================================',
+        ''
+      ];
+
+      if (combined.length === 0) {
+        lines.push(
+          'No medication confirmation attempts have been recorded yet.'
+        );
+
+      } else {
+        combined.forEach((entry, index) => {
+          lines.push('Entry ' + (index + 1));
+          lines.push(
+            'Timestamp: ' + (entry.timestamp || 'Unavailable')
+          );
+          lines.push(
+            'Date: ' + (entry.date || 'Unavailable')
+          );
+          lines.push(
+            'User confirmation: ' + (entry.answer || 'Unavailable')
+          );
+          lines.push(
+            'YES successfully captured: ' +
+            (entry.captured ? 'YES' : 'NO')
+          );
+          lines.push(
+            'Details: ' + (entry.details || 'No additional details')
+          );
+          lines.push(
+            '------------------------------------------------------------'
+          );
+          lines.push('');
+        });
+      }
+
+      const blob = new Blob(
+        [lines.join('\r\n')],
+        { type: 'text/plain;charset=utf-8' }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = 'medication-confirmation-logs.txt';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+    }
+
+    function getTodayDateString() {
+      return new Date().toLocaleDateString(
+        'en-CA',
+        { timeZone: 'Asia/Kolkata' }
+      );
+    }
+
+    function hasLoggedToday() {
+      const logs = JSON.parse(
+        localStorage.getItem('medLogs') || '{}'
+      );
+
+      return Boolean(logs[getTodayDateString()]);
+    }
+
+    function resetTodayStatus() {
+      const logs = JSON.parse(
+        localStorage.getItem('medLogs') || '{}'
+      );
+
+      delete logs[getTodayDateString()];
+
+      localStorage.setItem('medLogs', JSON.stringify(logs));
+
+      // Original behavior preserved: resetting today's entry does not
+      // erase the separate historical audit log.
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const logs = JSON.parse(
+        localStorage.getItem('medLogs') || '{}'
+      );
+
+      const list = document.getElementById('logList');
+      const btnYes = document.getElementById('btnYes');
+      const todayBadge = document.getElementById('todayBadge');
+
+      list.innerHTML = '';
+
+      const todayKey = getTodayDateString();
+
+      if (logs[todayKey]) {
+        btnYes.textContent =
+          "✔️ আজকের তথ্য জমা হয়েছে (Logged for Today)";
+
+        btnYes.disabled = true;
+
+        todayBadge.textContent = "✅ আজকের ওষুধ খাওয়া হয়েছে";
+        todayBadge.style.color = "#4ade80";
+
+      } else {
+        btnYes.textContent =
+          "✅ হ্যাঁ, খেয়েছি (Yes, Taken)";
+
+        btnYes.disabled = false;
+
+        todayBadge.textContent = "⏳ আজকের তথ্য বাকি আছে";
+        todayBadge.style.color = "#fbbf24";
+      }
+
+      const dates = Object.keys(logs).sort().reverse();
+
+      if (dates.length === 0) {
+        list.innerHTML =
+          '<li class="log-item" style="color:#64748b;">' +
+          'এখনও কোনো তথ্য জমা পড়েনি (No entries yet)' +
+          '</li>';
+
+        return;
+      }
+
+      dates.forEach(date => {
+        const item = logs[date];
+        const li = document.createElement('li');
+
+        li.className = 'log-item';
+
+        li.innerHTML = `
+          <span>📅 <strong>${date}</strong> (${item.time} IST)</span>
+          <span class="log-status">${item.answer}</span>
+        `;
+
+        list.appendChild(li);
+      });
+    }
+
+    // Initialize UI on load.
+    renderLogs();
+  </script>
+</body>
+</html>
